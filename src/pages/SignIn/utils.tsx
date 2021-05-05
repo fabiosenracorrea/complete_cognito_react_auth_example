@@ -15,6 +15,7 @@ interface PasswordValidations {
 const uppercaseRegex = /[A-Z]+/;
 const lowerCaseRegex = /[a-z]+/;
 const specialCharRegex = /(\W)+/;
+const numberRegex = /(\d)+/;
 
 export const passOptionValidators = {
   '8+ chars': (pw: string) => pw.length > 8,
@@ -24,6 +25,8 @@ export const passOptionValidators = {
   Lowercase: (pw: string) => lowerCaseRegex.test(pw),
 
   'Special char': (pw: string) => specialCharRegex.test(pw),
+
+  'Number': (pw: string) => numberRegex.test(pw)
 };
 
 function getUpdatedConditions(password: string): PasswordValidations {

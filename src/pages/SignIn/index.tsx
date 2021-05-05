@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import SignInForm from './components/SignInForm';
 import ChangePasswordForm from './components/ChangePasswordForm';
 import ResetPasswordForm from './components/ResetPasswordForm';
+import CpfForm from './components/CpfFrom';
 
 import { useAuth } from '../../hooks/Auth';
 
-import OWAnalyticsLogo from '../../assets/analytics-logo.svg';
+import oncoImg from '../../assets/logos-unidades-oc-recife.png';
 import { Container, Content } from './styles';
 
 import { SignInFormProps } from './types';
@@ -21,6 +22,8 @@ const RenderForm: React.FC<SignInFormProps> = ({ email, setEmail }) => {
       return <ChangePasswordForm />;
     case 'reset password':
       return <ResetPasswordForm email={email} />;
+    case 'validate cpf':
+      return <CpfForm />;
     default:
       return null;
   }
@@ -32,7 +35,7 @@ const Auth: React.FC = () => {
   return (
     <Container>
       <Content>
-        <img src={OWAnalyticsLogo} alt="OW Analytics" />
+        <img src={oncoImg} alt="Onco Clínicas" />
         <RenderForm email={email} setEmail={setEmail} />
       </Content>
     </Container>

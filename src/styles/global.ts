@@ -2,7 +2,7 @@ import { createGlobalStyle } from 'styled-components';
 
 export const theme = {
   colors: {
-    primary: '#6F79FD',
+    primary: '#0cb2aa',
     secondary: '#2832B2',
     text: '#868686',
     button: '#3f51b5',
@@ -55,16 +55,19 @@ const GlobalStyle = createGlobalStyle`
     flex-direction: column;
   }
 
-  .app-header button, .content > button {
+  .app-header button, .content > a.btn {
     border-radius: 5px;
     border: none;
     background: #0cb2aa;
     color: #fff;
     font-weight: 600;
+    font-size: 15px;
     height: 40px;
     width: 120px;
     text-transform: uppercase;
-    margin-top: 12px;
+    margin-top: 20px;
+    display: grid;
+    place-content: center;
   }
 
 `;

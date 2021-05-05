@@ -19,16 +19,8 @@ export const Content = styled.div`
   text-align: center;
 
   img {
-    margin: 0 auto 40px;
-    height: 5rem;
-
-    @media (max-width: 600px) {
-      height: 3rem;
-    }
-
-    @media (max-width: 400px) {
-      height: 2.5rem;
-    }
+    margin: 0 auto 20px;
+    height: 8rem;
   }
 `;
 
@@ -44,6 +36,12 @@ export const Form = styled.form`
 
   h3 {
     font-size: 2rem;
+    margin-bottom: 20px;
+  }
+
+  h4 {
+    margin-bottom: 20px;
+    font-size: 1.4rem;
   }
 
   > p {
@@ -62,9 +60,14 @@ export const Form = styled.form`
     margin-bottom: 25px;
   }
 
-  > .input-container,
+  > input,
   button {
     height: 40px;
+  }
+
+  input {
+    border: 1px solid ${({ theme }) => theme.colors.text};
+    margin-bottom: 15px;
   }
 
   input,
@@ -106,6 +109,29 @@ export const FormButton = styled.button<FormButtonProps>`
     cursor: default;
     background-color: ${({ theme }) => shade(0.45, theme.colors.primary)};
   }
+`;
+
+export const BaseBaseIdentityButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 1.2rem;
+  margin-top: 12px;
+`;
+
+export const FacebookBtn = styled(BaseBaseIdentityButton)`
+  background-color: #4267b2;
+`;
+
+export const GoogleBtn = styled(BaseBaseIdentityButton)`
+  background-color: #4285F4;
+`;
+
+export const PrivateBtn = styled(BaseBaseIdentityButton)`
+  background-color: ${({ theme }) => shade(0.45, theme.colors.primary)};
 `;
 
 export const ResendButton = styled(FormButton)`

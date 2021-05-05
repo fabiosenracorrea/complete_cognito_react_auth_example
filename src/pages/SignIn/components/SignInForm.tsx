@@ -1,8 +1,12 @@
 import React, { FormEvent, useCallback, useState } from 'react';
+import { Auth } from 'aws-amplify'
+
+import FacebookIcon from '@material-ui/icons/Facebook';
+import { FaGoogle, FaLock } from 'react-icons/fa';
 
 import { useAuth } from '../../../hooks/Auth';
 
-import { Form, Loader, FormButton } from '../styles';
+import { Form, Loader, FormButton, FacebookBtn, GoogleBtn, PrivateBtn } from '../styles';
 
 import { SignInFormProps } from '../types';
 
@@ -30,6 +34,8 @@ const SignInForm: React.FC<SignInFormProps> = ({ email, setEmail }) => {
 
   return (
     <Form onSubmit={handleLogIn}>
+      <h3>Faça seu Login</h3>
+
       <input
         type="text"
         name="email"
@@ -51,6 +57,25 @@ const SignInForm: React.FC<SignInFormProps> = ({ email, setEmail }) => {
         Login
         {loading && <Loader />}
       </FormButton>
+
+      <FacebookBtn type="button" onClick={() => Auth.federatedSignIn({ provider: 'Facebook' as any })}>
+        <FacebookIcon />
+        Facebook Login
+        <div />
+      </FacebookBtn>
+
+      <GoogleBtn type="button" onClick={() => Auth.federatedSignIn({ provider: 'Google' as any })}>
+        <FaGoogle />
+        Google Login
+        <div />
+      </GoogleBtn>
+
+      <PrivateBtn type="button" onClick={() => Auth.federatedSignIn({ provider: 'Rede-Corporativa' as any })}>
+        <FaLock />
+        Private Network
+        <div />
+      </PrivateBtn>
+
     </Form>
   );
 };

@@ -7,6 +7,8 @@ export interface UserAttributes {
   email: string;
   email_verified: boolean;
   sub: string;
+  name: string;
+  'custom:CPF'?: string;
 }
 
 export interface AwsUser {
@@ -59,12 +61,13 @@ export interface ChangePasswordCredentials {
   newPassword: string;
 }
 
-export type tLoginActions = 'login' | 'change password' | 'reset password' | null;
+export type tLoginActions = 'login' | 'change password' | 'reset password' | 'validate cpf' | null;
 
 export interface LoginActionsMapping {
   login: 'login';
   changePassword: 'change password';
   resetPassword: 'reset password';
+  validateCPF: 'validate cpf';
 }
 
 export interface AuthContextProps {
@@ -75,6 +78,7 @@ export interface AuthContextProps {
   changePassword(credentials: ChangePasswordCredentials): Promise<boolean | undefined>;
   sendResetPasswordCode(userEmail: string): Promise<boolean>;
   signOut(): void;
+  saveCPF: (cpf: string) => void;
 }
 
 
@@ -82,7 +86,7 @@ Amplify.configure({
   aws_project_region: 'us-east-1',
   aws_cognito_region: 'us-east-1',
   aws_user_pools_id: 'us-east-1_DS4ZryIzt',
-  aws_user_pools_web_client_id: '48j6mdglkb571n74fin8a3ge8k',
+  aws_user_pools_web_client_id: '4u5jca9iaajr1lgvus59i008e5',
 });
 
 Auth.configure({
@@ -104,12 +108,14 @@ Auth.configure({
 export const localStorageKeys = {
   user: '@user/info',
   validityCheck: 'lastValidityCheck',
+  userCPF: '@user/cpf',
 };
 
 const loginActions: LoginActionsMapping = {
   login: 'login',
   changePassword: 'change password',
   resetPassword: 'reset password',
+  validateCPF: 'validate cpf',
 };
 
 function parseAwsUserData(user: AwsUser): User {
@@ -125,6 +131,16 @@ function parseAwsUserData(user: AwsUser): User {
   };
 
   return userInfo;
+}
+
+async function addCpfToUser(user: AwsUser): Promise<void> {
+  const cpf = localStorage.getItem(localStorageKeys.userCPF);
+
+  if (!cpf || user.attributes['custom:CPF']) return;
+
+  await Auth.updateUserAttributes(user, {
+    'custom:CPF': cpf,
+  });
 }
 
 const AuthContext = createContext<AuthContextProps>({} as AuthContextProps);
@@ -148,8 +164,13 @@ const AuthProvider: React.FC = ({ children }) => {
 
     if (userInfoIsPresent) return null;
 
-    return loginActions.login;
+    return loginActions.validateCPF;
   });
+
+  const saveCPF = useCallback((cpf: string) => {
+    localStorage.setItem(localStorageKeys.userCPF, cpf);
+    setLoginAction('login')
+  }, [])
 
   const signIn = useCallback(
     async ({ email, password }) => {
@@ -164,6 +185,9 @@ const AuthProvider: React.FC = ({ children }) => {
         }
 
         const dataToStore = parseAwsUserData(user);
+
+        addCpfToUser(user);
+
         setUserData(dataToStore);
         localStorage.setItem(localStorageKeys.user, JSON.stringify(dataToStore));
         setLoginAction(null);
@@ -253,7 +277,7 @@ const AuthProvider: React.FC = ({ children }) => {
 
     localStorage.removeItem(localStorageKeys.user);
 
-    setLoginAction(loginActions.login);
+    setLoginAction(loginActions.validateCPF);
     setUserData({} as User);
   }, []);
 
@@ -263,7 +287,7 @@ const AuthProvider: React.FC = ({ children }) => {
         setLoading(true);
         const currentUser = await Auth.currentAuthenticatedUser();
 
-        console.log(currentUser)
+        addCpfToUser(currentUser);
 
         setUserData(currentUser)
         setLoginAction(null)
@@ -287,6 +311,7 @@ const AuthProvider: React.FC = ({ children }) => {
         changePassword,
         resetPassword,
         sendResetPasswordCode,
+        saveCPF,
       }}
     >
       {children}
