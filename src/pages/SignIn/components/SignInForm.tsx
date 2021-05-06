@@ -2,11 +2,11 @@ import React, { FormEvent, useCallback, useState } from 'react';
 import { Auth } from 'aws-amplify'
 
 import FacebookIcon from '@material-ui/icons/Facebook';
-import { FaGoogle, FaLock } from 'react-icons/fa';
+import { FaGoogle, FaLock, FaSignInAlt } from 'react-icons/fa';
 
 import { useAuth } from '../../../hooks/Auth';
 
-import { Form, Loader, FormButton, FacebookBtn, GoogleBtn, PrivateBtn } from '../styles';
+import { Form, Loader, FormButton, FacebookBtn, GoogleBtn, PrivateBtn, ForgotPasswordBtn, RegisterBtn } from '../styles';
 
 import { SignInFormProps } from '../types';
 
@@ -14,7 +14,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ email, setEmail }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { signIn } = useAuth();
+  const { signIn, forgotPassword, navigateToRegister } = useAuth();
 
   const handleLogIn = useCallback(
     async (formEvent: FormEvent) => {
@@ -52,11 +52,23 @@ const SignInForm: React.FC<SignInFormProps> = ({ email, setEmail }) => {
         onChange={({ target }) => setPassword(target.value)}
         required
       />
+
+      <ForgotPasswordBtn className="forgot" type="button" onClick={forgotPassword}>
+        Esqueci minha senha
+      </ForgotPasswordBtn>
+
+
       <FormButton type="submit" disabled={loading} $loading={loading}>
         {loading && <div />}
         Login
         {loading && <Loader />}
       </FormButton>
+
+      <RegisterBtn type="button" onClick={navigateToRegister}>
+        <FaSignInAlt />
+        Cadastre-se
+        <div />
+      </RegisterBtn>
 
       <FacebookBtn type="button" onClick={() => Auth.federatedSignIn({ provider: 'Facebook' as any })}>
         <FacebookIcon />

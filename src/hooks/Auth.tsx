@@ -1,6 +1,6 @@
 /* eslint no-console: "off", @typescript-eslint/no-explicit-any: "off" */
 import React, { createContext, useCallback, useState, useContext, useEffect } from 'react';
-import Amplify, { Auth } from 'aws-amplify'
+import Amplify, { Auth } from 'aws-amplify';
 import { useLoading } from "./Loading";
 
 export interface UserAttributes {
@@ -51,6 +51,18 @@ export interface SignInCredentials {
   password: string;
 }
 
+export interface ConfirmEmail {
+  email: string;
+  code: string;
+}
+
+export interface SignUpCredentials {
+  email: string;
+  password: string;
+  name: string;
+  cpf?: string;
+}
+
 export interface ResetPasswordCredentials {
   newPassword: string;
   confirmationCode: string;
@@ -61,24 +73,33 @@ export interface ChangePasswordCredentials {
   newPassword: string;
 }
 
-export type tLoginActions = 'login' | 'change password' | 'reset password' | 'validate cpf' | null;
+export type tLoginActions = 'login' | 'change password' | 'reset password' | 'validate cpf' | 'forgot password' | 'register' | 'confirm email' | null;
 
 export interface LoginActionsMapping {
   login: 'login';
   changePassword: 'change password';
   resetPassword: 'reset password';
   validateCPF: 'validate cpf';
+  forgotPw: 'forgot password';
+  register: 'register';
+  confirmEmail: 'confirm email';
 }
 
 export interface AuthContextProps {
   user: User;
   loginAction: tLoginActions;
   signIn(credentials: SignInCredentials): Promise<boolean | undefined>;
+  signUp: (credentials: SignUpCredentials) => Promise<boolean | undefined | void>
   resetPassword(credentials: ResetPasswordCredentials): Promise<boolean | undefined>;
   changePassword(credentials: ChangePasswordCredentials): Promise<boolean | undefined>;
   sendResetPasswordCode(userEmail: string): Promise<boolean>;
+  confirmUserEmail: (confirmData: ConfirmEmail) => Promise<boolean>
   signOut(): void;
   saveCPF: (cpf: string) => void;
+  forgotPassword: () => void;
+  navigateToRegister: () => void;
+  navigateToLogin: () => void;
+  reSendConfirmationCode: (email: string) => Promise<boolean>;
 }
 
 
@@ -116,6 +137,9 @@ const loginActions: LoginActionsMapping = {
   changePassword: 'change password',
   resetPassword: 'reset password',
   validateCPF: 'validate cpf',
+  forgotPw: 'forgot password',
+  register: 'register',
+  confirmEmail: 'confirm email',
 };
 
 function parseAwsUserData(user: AwsUser): User {
@@ -147,6 +171,7 @@ const AuthContext = createContext<AuthContextProps>({} as AuthContextProps);
 
 const AuthProvider: React.FC = ({ children }) => {
   const { setLoading } = useLoading();
+
   const [userData, setUserData] = useState<User>(() => {
     const user = localStorage.getItem(localStorageKeys.user);
 
@@ -177,6 +202,8 @@ const AuthProvider: React.FC = ({ children }) => {
       try {
         const user = (await Auth.signIn(email, password)) as AwsUser;
 
+        console.log(user);
+
         if (user.challengeName === 'NEW_PASSWORD_REQUIRED') {
           setLoginAction(loginActions.changePassword);
           setTempUserData(user as TempUserData);
@@ -200,11 +227,42 @@ const AuthProvider: React.FC = ({ children }) => {
           return;
         }
 
+        if (err.code === 'UserNotConfirmedException') {
+          alert('Please confirm your email')
+          setLoginAction(loginActions.confirmEmail);
+
+          return;
+        }
+
         alert('Sign-in error, please check your credentials and try again');
       }
     },
     [],
   );
+
+  const signUp = useCallback(async ({ name, email, password, cpf }) => {
+    try {
+      await Auth.signUp({
+        username: email,
+        password,
+        attributes: {
+          name,
+          email,
+          'custom:CPF': cpf,
+        },
+      });
+
+      setLoginAction(loginActions.confirmEmail)
+
+      return true;
+    } catch (err) {
+      console.log(err);
+
+      if (err.code === 'UsernameExistsException') return alert('Theres an user with this email already!');
+
+      alert('Sign-in error, please check your credentials and try again');
+    }
+  }, [])
 
   const changePassword = useCallback(
     async ({ newPassword }) => {
@@ -237,16 +295,22 @@ const AuthProvider: React.FC = ({ children }) => {
 
   const sendResetPasswordCode = useCallback(
     async (email) => {
+      let status = true;
+
       try {
         await Auth.forgotPassword(email);
 
         alert('Confirmation code sent! Please check your email');
 
-        return true;
+        setLoginAction(loginActions.resetPassword);
+
       } catch (err) {
         alert('Confirmation code not sent');
+
+        status = false;
       }
-      return false;
+
+      return status;
     },
     [],
   );
@@ -271,6 +335,43 @@ const AuthProvider: React.FC = ({ children }) => {
     },
     [],
   );
+
+  const confirmUserEmail = useCallback(async ({ email, code }) => {
+    let success = false;
+    try {
+      await Auth.confirmSignUp(email, code);
+
+      alert('Success! You can now login');
+
+      setLoginAction(loginActions.login)
+    } catch (err) {
+      if(err.code === 'CodeMismatchException') alert('Code Mismatch')
+
+      success = false;
+    }
+
+    return success;
+  }, []);
+
+  const reSendConfirmationCode = useCallback(async (email: string) => {
+    let sent = true;
+    try {
+      await Auth.resendSignUp(email);
+
+      alert('Confirmation Code sent! Check your e-mail')
+    } catch (err) {
+      alert('Confirmation Code not sent')
+      sent = false;
+    }
+
+    return sent;
+  }, [])
+
+  const forgotPassword = useCallback(() => setLoginAction(loginActions.forgotPw), []);
+
+  const navigateToRegister = useCallback(() => setLoginAction(loginActions.register), []);
+
+  const navigateToLogin = useCallback(() => setLoginAction(loginActions.login), []);
 
   const signOut = useCallback(async () => {
     await Auth.signOut();
@@ -312,6 +413,12 @@ const AuthProvider: React.FC = ({ children }) => {
         resetPassword,
         sendResetPasswordCode,
         saveCPF,
+        forgotPassword,
+        navigateToRegister,
+        signUp,
+        navigateToLogin,
+        confirmUserEmail,
+        reSendConfirmationCode,
       }}
     >
       {children}

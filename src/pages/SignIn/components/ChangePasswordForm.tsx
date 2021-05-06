@@ -31,9 +31,9 @@ const ChangePasswordForm: React.FC = () => {
 
   return (
     <Form onSubmit={handleChangeOfPassword}>
-      <h3>Welcome back!</h3>
+      <h3>Bem vindo de volta!</h3>
 
-      <p>Change your password to something secure</p>
+      <p>Mude sua senha para algo seguro</p>
 
       <input
         type="password"

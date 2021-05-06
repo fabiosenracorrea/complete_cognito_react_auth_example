@@ -61,7 +61,7 @@ export const Form = styled.form`
   }
 
   > input,
-  button {
+  button:not(.forgot) {
     height: 40px;
   }
 
@@ -81,9 +81,9 @@ export const Form = styled.form`
 export const FormButton = styled.button<FormButtonProps>`
   color: white;
   background-color: ${({ theme }) => theme.colors.primary};
-  width: 100%;
   border: none;
   outline: none;
+  font-size: 1.2rem;
 
   transition: background-color 0.2s;
 
@@ -120,6 +120,20 @@ export const BaseBaseIdentityButton = styled.button`
   color: #fff;
   font-size: 1.2rem;
   margin-top: 12px;
+`;
+
+export const ForgotPasswordBtn = styled.button`
+  background: transparent;
+  border: none;
+  text-align: end;
+  margin-bottom: 12px;
+  color: ${({ theme }) => theme.colors.text};
+  width: fit-content;
+  margin-left: auto;
+`;
+
+export const RegisterBtn = styled(BaseBaseIdentityButton)`
+  background-color: ${({ theme }) => theme.colors.text};
 `;
 
 export const FacebookBtn = styled(BaseBaseIdentityButton)`
