@@ -250,6 +250,9 @@ const AuthProvider: React.FC = ({ children }) => {
           email,
           'custom:CPF': cpf,
         },
+        validationData: {
+          password,
+        }
       });
 
       setLoginAction(loginActions.confirmEmail)
@@ -257,6 +260,10 @@ const AuthProvider: React.FC = ({ children }) => {
       return true;
     } catch (err) {
       console.log(err);
+
+      const BAD_PASSWORD = /Password Compromised/ig;
+
+      if (BAD_PASSWORD.test(err.message)) return alert('It seems your password does not pass our security checks. Please review it and try again');
 
       if (err.code === 'UsernameExistsException') return alert('Theres an user with this email already!');
 
