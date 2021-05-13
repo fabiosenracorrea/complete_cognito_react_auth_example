@@ -44,6 +44,7 @@ export interface User extends UserAttributes {
   [key: string]: any;
   username: string;
   userDataKey: string;
+  userGroups: string[]
 }
 
 export interface SignInCredentials {
