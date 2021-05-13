@@ -25,7 +25,7 @@ export interface AwsUser {
   signInUserSession: {
     accessToken: {
       payload: {
-        'cognito:groups'?: string[];
+        'cognito:groups'?: string[]; // used to validate private users
       };
     };
   };
@@ -267,7 +267,7 @@ const AuthProvider: React.FC = ({ children }) => {
 
       if (err.code === 'UsernameExistsException') return alert('Theres an user with this email already!');
 
-      alert('Sign-in error, please check your credentials and try again');
+      alert('Sign-un error, please check your credentials and try again');
     }
   }, [])
 
@@ -345,6 +345,7 @@ const AuthProvider: React.FC = ({ children }) => {
 
   const confirmUserEmail = useCallback(async ({ email, code }) => {
     let success = false;
+
     try {
       await Auth.confirmSignUp(email, code);
 
@@ -362,6 +363,7 @@ const AuthProvider: React.FC = ({ children }) => {
 
   const reSendConfirmationCode = useCallback(async (email: string) => {
     let sent = true;
+
     try {
       await Auth.resendSignUp(email);
 
@@ -397,7 +399,7 @@ const AuthProvider: React.FC = ({ children }) => {
 
         addCpfToUser(currentUser);
 
-        setUserData(currentUser)
+        setUserData(currentUser);
         setLoginAction(null)
       } catch (error) {
         signOut();
