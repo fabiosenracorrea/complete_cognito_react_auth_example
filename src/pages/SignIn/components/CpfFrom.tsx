@@ -26,7 +26,7 @@ const CpfForm: React.FC = () => {
 
       setLoading(false)
 
-      if (!validCPF) return alert('CPF Not authorized!');
+      // if (!validCPF) return alert('CPF Not authorized!');
 
       saveCPF(cpf)
     },

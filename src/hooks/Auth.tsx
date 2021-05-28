@@ -107,13 +107,34 @@ export interface AuthContextProps {
 Amplify.configure({
   aws_project_region: 'us-east-1',
   aws_cognito_region: 'us-east-1',
-  aws_user_pools_id: 'us-east-1_DS4ZryIzt',
-  aws_user_pools_web_client_id: '4u5jca9iaajr1lgvus59i008e5',
+  // dev
+  // aws_user_pools_id: 'us-east-1_DS4ZryIzt',
+  // aws_user_pools_web_client_id: '4u5jca9iaajr1lgvus59i008e5',
+  // stag
+  aws_user_pools_id: 'us-east-1_1YGpT2Q7l',
+  aws_user_pools_web_client_id: '6m83jkhf6qpbnmbmnromsccub6',
 });
 
 Auth.configure({
+  // dev
+  // oauth: {
+  //   domain: "oncoclinicasdemo.auth.us-east-1.amazoncognito.com",
+  //   scope: [
+  //     "phone",
+  //     "email",
+  //     "openid",
+  //     "aws.cognito.signin.user.admin",
+  //     "profile"
+  //   ],
+  //   // redirectSignIn: "http://localhost:3000",
+  //   redirectSignIn: "https://d1ikivffktyzut.cloudfront.net",
+  //   // redirectSignOut: "http://localhost:3000",
+  //   redirectSignOut: "https://d1ikivffktyzut.cloudfront.net",
+  //   responseType: "token"
+  // },
+  // stag
   oauth: {
-    domain: "oncoclinicasdemo.auth.us-east-1.amazoncognito.com",
+    domain: "oncoclinicas-staging.auth.us-east-1.amazoncognito.com",
     scope: [
       "phone",
       "email",
@@ -121,8 +142,10 @@ Auth.configure({
       "aws.cognito.signin.user.admin",
       "profile"
     ],
-    redirectSignIn: "http://localhost:3000",
-    redirectSignOut: "http://localhost:3000",
+    // redirectSignIn: "http://localhost:3000",
+    // redirectSignOut: "http://localhost:3000",
+    redirectSignIn: "https://d1ikivffktyzut.cloudfront.net",
+    redirectSignOut: "https://d1ikivffktyzut.cloudfront.net",
     responseType: "token"
   },
 });
