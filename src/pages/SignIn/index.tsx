@@ -5,7 +5,8 @@ import ChangePasswordForm from './components/ChangePasswordForm';
 import ResetPasswordForm from './components/ResetPasswordForm';
 import RecoverPasswordForm from './components/RecoverPasswordForm';
 import RegisterForm from './components/RegisterForm';
-import CpfForm from './components/CpfFrom';
+// import CpfForm from './components/CpfFrom';
+import ConfirmPhoneForm from './components/ConfirmPhoneForm';
 import ConfirmEmailForm from './components/ConfirmEmailForm';
 
 import { useAuth } from '../../hooks/Auth';
@@ -25,12 +26,16 @@ const RenderForm: React.FC<SignInFormProps> = ({ email, setEmail }) => {
       return <ChangePasswordForm />;
     case 'reset password':
       return <ResetPasswordForm email={email} />;
-    case 'validate cpf':
-      return <CpfForm />;
+    // case 'validate cpf':
+    //   return <CpfForm />;
     case 'forgot password':
       return <RecoverPasswordForm email={email} setEmail={setEmail} />;
     case 'register':
       return <RegisterForm email={email} setEmail={setEmail} />
+    case 'confirm phone':
+      return <ConfirmPhoneForm email={email} />
+    case 'confirm MFA':
+      return <ConfirmPhoneForm email={email} />
     case 'confirm email':
       return <ConfirmEmailForm email={email} />
     default:

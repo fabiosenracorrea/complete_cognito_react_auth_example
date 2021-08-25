@@ -5,7 +5,6 @@ import Check from '@material-ui/icons/Check';
 import { useAuth } from '../../../hooks/Auth';
 
 import { Form, ResendButton, Loader, FormButton } from '../styles';
-import { useEffect } from 'react';
 
 interface ResetPasswordProps {
   email: string;
@@ -17,11 +16,9 @@ const ConfirmEmailForm: React.FC<ResetPasswordProps> = ({ email }) => {
   const [loadingReset, setLoadingReset] = useState(false);
   const [codeSentSuccess, setCodeSentSuccess] = useState(false);
 
-  const { confirmUserEmail, requestUserEmailConfirmation, userCredentials } = useAuth();
+  const { confirmUserPhone, reSendConfirmationCode, loginAction, completeMFA, userPhone, retryMFA } = useAuth();
 
-  useEffect(() => {
-    requestUserEmailConfirmation(email);
-  }, []) // eslint-disable-line
+  const isMFA = loginAction === 'confirm MFA';
 
   const handleEmailConfirmation = useCallback(
     async (formEvent: FormEvent) => {
@@ -31,31 +28,37 @@ const ConfirmEmailForm: React.FC<ResetPasswordProps> = ({ email }) => {
 
       setLoadingReset(true);
 
-      const success = await confirmUserEmail({ code: confirmationCode, email });
+      const callback = isMFA ? completeMFA : confirmUserPhone;
+
+      const success = await callback({ code: confirmationCode, email });
 
       if (!success) setLoadingReset(false);
     },
-    [confirmUserEmail, confirmationCode, email],
+    [confirmUserPhone, confirmationCode, email, isMFA, completeMFA],
   );
 
   const handleCodeResending = useCallback(async () => {
     setLoadingCodeSending(true);
 
-    const sent = await requestUserEmailConfirmation(email);
+    const callback = isMFA ? retryMFA : reSendConfirmationCode;
+
+    const sent = await callback(email);
 
     setLoadingCodeSending(false);
     setCodeSentSuccess(sent);
-  }, [email, requestUserEmailConfirmation]);
-
-  const userEmail = email || userCredentials?.email;
+  }, [email, reSendConfirmationCode, retryMFA, isMFA]);
 
   return (
     <Form onSubmit={handleEmailConfirmation}>
-      <h3>Confirme seu e-mail</h3>
+      <h3>{isMFA ? 'Complete seu login' : 'Confirme seu telefone'}</h3>
 
       <p>
-        Cheque seu <span>e-mail</span> para o código de confirmação.{' '}
-        {userEmail && (<>Foi enviado para <span>{userEmail}</span></>)}
+        Cheque seu <span>telefone</span> para o código de confirmação.
+        {userPhone ? (
+          <>
+            Foi enviado para o telefone de final <span>{userPhone}</span>
+          </>
+        ) : ''}
       </p>
 
       <input

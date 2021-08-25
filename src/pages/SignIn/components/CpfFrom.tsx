@@ -12,7 +12,7 @@ const CpfForm: React.FC = () => {
   const [cpf, setCpf] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { saveCPF } = useAuth();
+  // const { saveCPF } = useAuth();
 
   const handleCPFValidation = useCallback(
     async (formEvent: FormEvent) => {
@@ -28,9 +28,9 @@ const CpfForm: React.FC = () => {
 
       // if (!validCPF) return alert('CPF Not authorized!');
 
-      saveCPF(cpf)
+      // saveCPF(cpf)
     },
-    [cpf, saveCPF],
+    [cpf],
   );
 
   const handleCPFInput = useCallback(({ target }: ChangeEvent<HTMLInputElement>) => {

@@ -8,7 +8,7 @@ export interface UserAttributes {
   email_verified: boolean;
   sub: string;
   name: string;
-  'custom:CPF'?: string;
+  'custom:CPF': string;
 }
 
 export interface AwsUser {
@@ -37,6 +37,7 @@ export interface TempUserData extends AwsUser {
   challengeParam: {
     requiredAttributes: Array<object>;
     useAttributes: any;
+    CODE_DELIVERY_DESTINATION?: string;
   };
 }
 
@@ -60,8 +61,9 @@ export interface ConfirmEmail {
 export interface SignUpCredentials {
   email: string;
   password: string;
+  phoneNumber: string;
   name: string;
-  cpf?: string;
+  cpf: string;
 }
 
 export interface ResetPasswordCredentials {
@@ -74,29 +76,51 @@ export interface ChangePasswordCredentials {
   newPassword: string;
 }
 
-export type tLoginActions = 'login' | 'change password' | 'reset password' | 'validate cpf' | 'forgot password' | 'register' | 'confirm email' | null;
+interface UserCredentials {
+  email: string;
+  password: string;
+}
+
+export type tLoginActions =
+  | 'login'
+  | 'change password'
+  | 'reset password'
+  | 'forgot password'
+  | 'register'
+  | 'confirm email'
+  | 'confirm phone'
+  | 'confirm MFA'
+  | null;
 
 export interface LoginActionsMapping {
   login: 'login';
   changePassword: 'change password';
   resetPassword: 'reset password';
-  validateCPF: 'validate cpf';
+  // validateCPF: 'validate cpf';
   forgotPw: 'forgot password';
   register: 'register';
   confirmEmail: 'confirm email';
+  confirmPhone: 'confirm phone';
+  confirmMFA: 'confirm MFA';
 }
 
 export interface AuthContextProps {
   user: User;
   loginAction: tLoginActions;
+  userCredentials: UserCredentials | null;
+  userPhone: string | null;
   signIn(credentials: SignInCredentials): Promise<boolean | undefined>;
   signUp: (credentials: SignUpCredentials) => Promise<boolean | undefined | void>
   resetPassword(credentials: ResetPasswordCredentials): Promise<boolean | undefined>;
   changePassword(credentials: ChangePasswordCredentials): Promise<boolean | undefined>;
   sendResetPasswordCode(userEmail: string): Promise<boolean>;
-  confirmUserEmail: (confirmData: ConfirmEmail) => Promise<boolean>
+  requestUserEmailConfirmation(userEmail: string): Promise<boolean>;
+  confirmUserPhone: (confirmData: ConfirmEmail) => Promise<boolean>;
+  confirmUserEmail: (confirmData: ConfirmEmail) => Promise<boolean>;
+  completeMFA: (confirmData: ConfirmEmail) => Promise<boolean>;
+  retryMFA: () => Promise<boolean>;
   signOut(): void;
-  saveCPF: (cpf: string) => void;
+  // saveCPF: (cpf: string) => void;
   forgotPassword: () => void;
   navigateToRegister: () => void;
   navigateToLogin: () => void;
@@ -108,33 +132,17 @@ Amplify.configure({
   aws_project_region: 'us-east-1',
   aws_cognito_region: 'us-east-1',
   // dev
-  // aws_user_pools_id: 'us-east-1_DS4ZryIzt',
-  // aws_user_pools_web_client_id: '4u5jca9iaajr1lgvus59i008e5',
+  aws_user_pools_id: 'us-east-1_SnvtsfKrG',
+  aws_user_pools_web_client_id: '1nkqrcc78iihljs6vjabjei27f',
   // stag
-  aws_user_pools_id: 'us-east-1_1YGpT2Q7l',
-  aws_user_pools_web_client_id: '6m83jkhf6qpbnmbmnromsccub6',
+  // aws_user_pools_id: 'us-east-1_1YGpT2Q7l',
+  // aws_user_pools_web_client_id: '6m83jkhf6qpbnmbmnromsccub6',
 });
 
 Auth.configure({
   // dev
-  // oauth: {
-  //   domain: "oncoclinicasdemo.auth.us-east-1.amazoncognito.com",
-  //   scope: [
-  //     "phone",
-  //     "email",
-  //     "openid",
-  //     "aws.cognito.signin.user.admin",
-  //     "profile"
-  //   ],
-  //   // redirectSignIn: "http://localhost:3000",
-  //   redirectSignIn: "https://d1ikivffktyzut.cloudfront.net",
-  //   // redirectSignOut: "http://localhost:3000",
-  //   redirectSignOut: "https://d1ikivffktyzut.cloudfront.net",
-  //   responseType: "token"
-  // },
-  // stag
   oauth: {
-    domain: "oncoclinicas-staging.auth.us-east-1.amazoncognito.com",
+    domain: "oc-identity.auth.us-east-1.amazoncognito.com",
     scope: [
       "phone",
       "email",
@@ -142,12 +150,28 @@ Auth.configure({
       "aws.cognito.signin.user.admin",
       "profile"
     ],
-    // redirectSignIn: "http://localhost:3000",
-    // redirectSignOut: "http://localhost:3000",
-    redirectSignIn: "https://d1ikivffktyzut.cloudfront.net",
-    redirectSignOut: "https://d1ikivffktyzut.cloudfront.net",
+    redirectSignIn: "http://localhost:3000",
+    // redirectSignIn: "https://d1ikivffktyzut.cloudfront.net",
+    redirectSignOut: "http://localhost:3000",
+    // redirectSignOut: "https://d1ikivffktyzut.cloudfront.net",
     responseType: "token"
   },
+  // stag
+  // oauth: {
+  //   domain: "oncoclinicas-staging.auth.us-east-1.amazoncognito.com",
+  //   scope: [
+  //     "phone",
+  //     "email",
+  //     "openid",
+  //     "aws.cognito.signin.user.admin",
+  //     "profile"
+  //   ],
+  //   redirectSignIn: "http://localhost:3000",
+  //   redirectSignOut: "http://localhost:3000",
+  //   // redirectSignIn: "https://d1ikivffktyzut.cloudfront.net",
+  //   // redirectSignOut: "https://d1ikivffktyzut.cloudfront.net",
+  //   responseType: "token"
+  // },
 });
 
 export const localStorageKeys = {
@@ -160,16 +184,18 @@ const loginActions: LoginActionsMapping = {
   login: 'login',
   changePassword: 'change password',
   resetPassword: 'reset password',
-  validateCPF: 'validate cpf',
+  // validateCPF: 'validate cpf',
   forgotPw: 'forgot password',
   register: 'register',
   confirmEmail: 'confirm email',
+  confirmPhone: 'confirm phone',
+  confirmMFA: 'confirm MFA',
 };
 
 function parseAwsUserData(user: AwsUser): User {
   const { attributes, username, userDataKey, signInUserSession } = user;
 
-  const userGroups = signInUserSession.accessToken.payload['cognito:groups'] || [];
+  const userGroups = signInUserSession?.accessToken?.payload?.['cognito:groups'] || [];
 
   const userInfo = {
     ...attributes,
@@ -181,15 +207,15 @@ function parseAwsUserData(user: AwsUser): User {
   return userInfo;
 }
 
-async function addCpfToUser(user: AwsUser): Promise<void> {
-  const cpf = localStorage.getItem(localStorageKeys.userCPF);
+// async function addCpfToUser(user: AwsUser): Promise<void> {
+//   const cpf = localStorage.getItem(localStorageKeys.userCPF);
 
-  if (!cpf || user.attributes['custom:CPF']) return;
+//   if (!cpf || user.attributes['custom:CPF']) return;
 
-  await Auth.updateUserAttributes(user, {
-    'custom:CPF': cpf,
-  });
-}
+//   await Auth.updateUserAttributes(user, {
+//     'custom:CPF': cpf,
+//   });
+// }
 
 const AuthContext = createContext<AuthContextProps>({} as AuthContextProps);
 
@@ -206,19 +232,33 @@ const AuthProvider: React.FC = ({ children }) => {
     return {} as User;
   });
 
+  const [userCredentials, setUserCredentials] = useState<UserCredentials | null>(null);
+  const [userPhone, setUserPhone] = useState<string | null>(null);
+
   const [tempUserData, setTempUserData] = useState<TempUserData | null>(null);
 
   const [loginAction, setLoginAction] = useState<tLoginActions>(() => {
-    const userInfoIsPresent = Object.keys(userData).length > 0;
+    if (userData.sub) return null;
 
-    if (userInfoIsPresent) return null;
-
-    return loginActions.validateCPF;
+    return loginActions.login
   });
 
-  const saveCPF = useCallback((cpf: string) => {
-    localStorage.setItem(localStorageKeys.userCPF, cpf);
-    setLoginAction('login')
+  // const saveCPF = useCallback((cpf: string) => {
+  //   localStorage.setItem(localStorageKeys.userCPF, cpf);
+  //   setLoginAction('login')
+  // }, []);
+
+  const parseUserForEmailConfirmation = useCallback((awsUser: AwsUser) => {
+    const user = parseAwsUserData(awsUser);
+
+    const { email_verified, email } = user;
+
+    setUserData(user);
+    localStorage.setItem(localStorageKeys.user, JSON.stringify(user));
+
+    setUserCredentials(email_verified ? null : { email, password: '' })
+    setLoginAction(email_verified ? null : loginActions.confirmEmail);
+    setTempUserData(email_verified ? null : awsUser as TempUserData);
   }, [])
 
   const signIn = useCallback(
@@ -226,7 +266,8 @@ const AuthProvider: React.FC = ({ children }) => {
       try {
         const user = (await Auth.signIn(email, password)) as AwsUser;
 
-        console.log(user);
+        const credentials = { email, password };
+        setUserCredentials(credentials);
 
         if (user.challengeName === 'NEW_PASSWORD_REQUIRED') {
           setLoginAction(loginActions.changePassword);
@@ -235,16 +276,20 @@ const AuthProvider: React.FC = ({ children }) => {
           return;
         }
 
-        const dataToStore = parseAwsUserData(user);
+        if (user.challengeName === 'SMS_MFA') {
+          setLoginAction(loginActions.confirmMFA);
+          setTempUserData(user as TempUserData);
+          setUserPhone((user as TempUserData)?.challengeParam?.CODE_DELIVERY_DESTINATION || null)
 
-        addCpfToUser(user);
+          return;
+        }
 
-        setUserData(dataToStore);
-        localStorage.setItem(localStorageKeys.user, JSON.stringify(dataToStore));
-        setLoginAction(null);
+        parseUserForEmailConfirmation(user)
 
         return true;
       } catch (err) {
+        console.log(err)
+
         if (err.code === 'PasswordResetRequiredException') {
           setLoginAction(loginActions.resetPassword);
 
@@ -252,19 +297,29 @@ const AuthProvider: React.FC = ({ children }) => {
         }
 
         if (err.code === 'UserNotConfirmedException') {
-          alert('Please confirm your email')
-          setLoginAction(loginActions.confirmEmail);
+          alert('Please confirm your phone')
+          setLoginAction(loginActions.confirmPhone);
 
           return;
         }
 
+        // if (err.message.includes('confirm your e-mail')) {
+        //   alert('Please confirm your e-mail')
+        //   setLoginAction(loginActions.confirmEmail);
+
+        //   return;
+        // }
+
         alert('Sign-in error, please check your credentials and try again');
+        setUserCredentials(null);
       }
     },
-    [],
+    [parseUserForEmailConfirmation],
   );
 
-  const signUp = useCallback(async ({ name, email, password, cpf }) => {
+  const signUp = useCallback(async ({ name, email, password, cpf, phoneNumber }) => {
+    const phoneNumberFormatted = `+55${phoneNumber}`; // this should be validated before sending in!
+
     try {
       await Auth.signUp({
         username: email,
@@ -273,13 +328,17 @@ const AuthProvider: React.FC = ({ children }) => {
           name,
           email,
           'custom:CPF': cpf,
+          phone_number: phoneNumberFormatted,
         },
         validationData: {
           password,
         }
       });
 
-      setLoginAction(loginActions.confirmEmail)
+      const credentials = { email, password };
+      setUserCredentials(credentials);
+
+      setLoginAction(loginActions.confirmPhone)
 
       return true;
     } catch (err) {
@@ -291,7 +350,7 @@ const AuthProvider: React.FC = ({ children }) => {
 
       if (err.code === 'UsernameExistsException') return alert('Theres an user with this email already!');
 
-      alert('Sign-un error, please check your credentials and try again');
+      alert('Sign-up error, please check your credentials and try again');
     }
   }, [])
 
@@ -306,11 +365,9 @@ const AuthProvider: React.FC = ({ children }) => {
           tempUserData.challengeParam.requiredAttributes,
         );
 
-        const dataToStore = parseAwsUserData(updatedUserData);
-        setUserData(dataToStore);
-        localStorage.setItem(localStorageKeys.user, JSON.stringify(dataToStore));
-        setLoginAction(null);
         setTempUserData(null);
+
+        parseUserForEmailConfirmation(updatedUserData)
 
         return true;
       } catch (err) {
@@ -321,7 +378,7 @@ const AuthProvider: React.FC = ({ children }) => {
 
       return false;
     },
-    [tempUserData],
+    [tempUserData, parseUserForEmailConfirmation],
   );
 
   const sendResetPasswordCode = useCallback(
@@ -367,23 +424,66 @@ const AuthProvider: React.FC = ({ children }) => {
     [],
   );
 
-  const confirmUserEmail = useCallback(async ({ email, code }) => {
+  const confirmUserPhone = useCallback(async ({ email, code }) => {
     let success = false;
 
     try {
       await Auth.confirmSignUp(email, code);
 
-      alert('Success! You can now login');
+      alert('Success! Phone Confirmed');
 
-      setLoginAction(loginActions.login)
+      const awsUser = await Auth.currentAuthenticatedUser();
+
+      parseUserForEmailConfirmation(awsUser)
+
+      success = true;
     } catch (err) {
-      if(err.code === 'CodeMismatchException') alert('Code Mismatch')
+      if (err.code === 'CodeMismatchException') alert('Code Mismatch');
+
+      console.log('confirm error', err)
 
       success = false;
     }
 
     return success;
-  }, []);
+  }, [parseUserForEmailConfirmation]);
+
+  const requestUserEmailConfirmation = useCallback(async (email) => {
+    let sent = true;
+
+    try {
+      await Auth.verifyUserAttribute(tempUserData, 'email');
+    } catch (err) {
+      console.log(err)
+      sent = false
+    }
+
+    return sent;
+  }, [tempUserData])
+
+  const confirmUserEmail = useCallback(async ({ email, code }) => {
+    let success = false;
+
+    try {
+      await Auth.verifyUserAttributeSubmit(tempUserData, 'email', code)
+
+      alert('Success! Email verified');
+
+      setLoginAction(null)
+      setUserCredentials(null)
+      setTempUserData(null);
+    } catch (err) {
+      if (err.code === 'CodeMismatchException') alert('Code Mismatch');
+
+      alert('Error verifying email')
+
+      console.log(err)
+
+      success = false;
+    }
+
+    return success;
+  }, [tempUserData]);
 
   const reSendConfirmationCode = useCallback(async (email: string) => {
     let sent = true;
@@ -391,14 +491,51 @@ const AuthProvider: React.FC = ({ children }) => {
     try {
       await Auth.resendSignUp(email);
 
-      alert('Confirmation Code sent! Check your e-mail')
+      alert('Confirmation Code sent! Check your phone')
     } catch (err) {
       alert('Confirmation Code not sent')
       sent = false;
     }
 
     return sent;
-  }, [])
+  }, []);
+
+  const retryMFA = useCallback(async () => {
+    let sent = true;
+
+    try {
+      await signIn(userCredentials)
+
+      alert('Code sent! Check your phone')
+    } catch (err) {
+      alert('Confirmation Code not sent')
+      sent = false;
+    }
+
+    return sent;
+  }, [userCredentials, signIn]);
+
+  const completeMFA = useCallback(async ({ code }) => {
+    let success = false;
+
+    try {
+      await Auth.confirmSignIn(tempUserData, code, 'SMS_MFA');
+
+      alert('MFA Completed with success');
+
+      const awsUser = await Auth.currentAuthenticatedUser();
+
+      parseUserForEmailConfirmation(awsUser)
+
+      success = true;
+    } catch (err) {
+      console.log('MFA COMPLETION ERROR', err);
+
+      alert('It was not possible to complete MFA. Check your code and try again')
+    }
+
+    return success;
+  }, [tempUserData, parseUserForEmailConfirmation])
 
   const forgotPassword = useCallback(() => setLoginAction(loginActions.forgotPw), []);
 
@@ -411,20 +548,18 @@ const AuthProvider: React.FC = ({ children }) => {
 
     localStorage.removeItem(localStorageKeys.user);
 
-    setLoginAction(loginActions.validateCPF);
+    setLoginAction(loginActions.login);
     setUserData({} as User);
   }, []);
 
   useEffect(() => {
     async function reCheckUser() {
       try {
-        setLoading(true);
-        const currentUser = await Auth.currentAuthenticatedUser();
+        setLoading(true)
 
-        addCpfToUser(currentUser);
+        const awsUser = await Auth.currentAuthenticatedUser();
+        parseUserForEmailConfirmation(awsUser)
 
-        setUserData(currentUser);
-        setLoginAction(null)
       } catch (error) {
         signOut();
       } finally {
@@ -440,18 +575,24 @@ const AuthProvider: React.FC = ({ children }) => {
       value={{
         loginAction,
         user: userData,
+        userPhone,
+        userCredentials,
         signIn,
         signOut,
         changePassword,
         resetPassword,
         sendResetPasswordCode,
-        saveCPF,
+        // saveCPF,
         forgotPassword,
         navigateToRegister,
         signUp,
         navigateToLogin,
+        confirmUserPhone,
         confirmUserEmail,
         reSendConfirmationCode,
+        requestUserEmailConfirmation,
+        completeMFA,
+        retryMFA,
       }}
     >
       {children}
