@@ -20,6 +20,9 @@ const ConfirmEmailForm: React.FC<ResetPasswordProps> = ({ email }) => {
   const { confirmUserEmail, requestUserEmailConfirmation, userCredentials } = useAuth();
 
   useEffect(() => {
+    /*
+      BE AWARE! THERE'S VALIDATION NEEDED HERE TO ENSURE THIS IS NOT SENT TO EXTERNAL_PROVIDER USERS!
+    */
     requestUserEmailConfirmation(email);
   }, []) // eslint-disable-line
 

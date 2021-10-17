@@ -1,7 +1,9 @@
 /* eslint no-console: "off", @typescript-eslint/no-explicit-any: "off" */
 import React, { createContext, useCallback, useState, useContext, useEffect } from 'react';
 import Amplify, { Auth } from 'aws-amplify';
+
 import { useLoading } from "./Loading";
+import { useHashParams } from './hashParams';
 
 export interface UserAttributes {
   email: string;
@@ -120,20 +122,18 @@ export interface AuthContextProps {
   completeMFA: (confirmData: ConfirmEmail) => Promise<boolean>;
   retryMFA: () => Promise<boolean>;
   signOut(): void;
-  // saveCPF: (cpf: string) => void;
   forgotPassword: () => void;
   navigateToRegister: () => void;
   navigateToLogin: () => void;
   reSendConfirmationCode: (email: string) => Promise<boolean>;
 }
 
-
 Amplify.configure({
   aws_project_region: 'us-east-1',
   aws_cognito_region: 'us-east-1',
   // dev
-  aws_user_pools_id: 'us-east-1_SnvtsfKrG',
-  aws_user_pools_web_client_id: '1nkqrcc78iihljs6vjabjei27f',
+  aws_user_pools_id: 'us-east-1_ZPYjZUOnJ',
+  aws_user_pools_web_client_id: '78qm0hndb9gf05upfekad41k6m',
   // stag
   // aws_user_pools_id: 'us-east-1_1YGpT2Q7l',
   // aws_user_pools_web_client_id: '6m83jkhf6qpbnmbmnromsccub6',
@@ -178,6 +178,7 @@ export const localStorageKeys = {
   user: '@user/info',
   validityCheck: 'lastValidityCheck',
   userCPF: '@user/cpf',
+  providerSignIn: '@provider',
 };
 
 const loginActions: LoginActionsMapping = {
@@ -222,6 +223,25 @@ const AuthContext = createContext<AuthContextProps>({} as AuthContextProps);
 const AuthProvider: React.FC = ({ children }) => {
   const { setLoading } = useLoading();
 
+  const hashParams = useHashParams();
+
+  useEffect(() => {
+    const providerRedirect = localStorage.getItem(localStorageKeys.providerSignIn);
+    const hasError = 'error' in hashParams;
+
+    if (!hasError || !providerRedirect) return;
+
+    const errorDescription = hashParams.error_description || '';
+    const userLinkErrorRegex = /^already found an entry for username (facebook|google)_/i
+    const shouldRecallFederatedSignIn = userLinkErrorRegex.test(errorDescription);
+
+    if (!shouldRecallFederatedSignIn) return;
+
+    localStorage.removeItem(localStorageKeys.providerSignIn);
+
+    Auth.federatedSignIn({ provider: providerRedirect as any })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const [userData, setUserData] = useState<User>(() => {
     const user = localStorage.getItem(localStorageKeys.user);
 
@@ -243,15 +263,12 @@ const AuthProvider: React.FC = ({ children }) => {
     return loginActions.login
   });
 
-  // const saveCPF = useCallback((cpf: string) => {
-  //   localStorage.setItem(localStorageKeys.userCPF, cpf);
-  //   setLoginAction('login')
-  // }, []);
-
   const parseUserForEmailConfirmation = useCallback((awsUser: AwsUser) => {
     const user = parseAwsUserData(awsUser);
 
     const { email_verified, email } = user;
+
+    console.log('user', user)
 
     setUserData(user);
     localStorage.setItem(localStorageKeys.user, JSON.stringify(user));
@@ -303,13 +320,6 @@ const AuthProvider: React.FC = ({ children }) => {
           return;
         }
 
-        // if (err.message.includes('confirm your e-mail')) {
-        //   alert('Please confirm your e-mail')
-        //   setLoginAction(loginActions.confirmEmail);
-
-        //   return;
-        // }
-
         alert('Sign-in error, please check your credentials and try again');
         setUserCredentials(null);
       }
@@ -321,7 +331,7 @@ const AuthProvider: React.FC = ({ children }) => {
     const phoneNumberFormatted = `+55${phoneNumber}`; // this should be validated before sending in!
 
     try {
-      await Auth.signUp({
+      const pre = await Auth.signUp({
         username: email,
         password,
         attributes: {
@@ -334,6 +344,8 @@ const AuthProvider: React.FC = ({ children }) => {
           password,
         }
       });
+
+      console.log('SIGNUP', pre)
 
       const credentials = { email, password };
       setUserCredentials(credentials);
@@ -430,11 +442,9 @@ const AuthProvider: React.FC = ({ children }) => {
     try {
       await Auth.confirmSignUp(email, code);
 
-      alert('Success! Phone Confirmed');
+      alert('Success! Phone Confirmed. You can now login');
 
-      const awsUser = await Auth.currentAuthenticatedUser();
-
-      parseUserForEmailConfirmation(awsUser)
+      setLoginAction(loginActions.login);
 
       success = true;
     } catch (err) {
@@ -446,7 +456,7 @@ const AuthProvider: React.FC = ({ children }) => {
     }
 
     return success;
-  }, [parseUserForEmailConfirmation]);
+  }, []);
 
   const requestUserEmailConfirmation = useCallback(async (email) => {
     let sent = true;
@@ -582,7 +592,6 @@ const AuthProvider: React.FC = ({ children }) => {
         changePassword,
         resetPassword,
         sendResetPasswordCode,
-        // saveCPF,
         forgotPassword,
         navigateToRegister,
         signUp,

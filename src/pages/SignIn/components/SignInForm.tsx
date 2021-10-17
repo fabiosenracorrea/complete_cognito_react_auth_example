@@ -4,7 +4,7 @@ import { Auth } from 'aws-amplify'
 import FacebookIcon from '@material-ui/icons/Facebook';
 import { FaGoogle, FaLock, FaSignInAlt } from 'react-icons/fa';
 
-import { useAuth } from '../../../hooks/Auth';
+import { localStorageKeys, useAuth } from '../../../hooks/Auth';
 
 import { Form, Loader, FormButton, FacebookBtn, GoogleBtn, PrivateBtn, ForgotPasswordBtn, RegisterBtn } from '../styles';
 
@@ -32,6 +32,12 @@ const SignInForm: React.FC<SignInFormProps> = ({ email, setEmail }) => {
     [email, password, signIn],
   );
 
+  const handleProviderLogin = useCallback((provider: 'Google' | 'Facebook' | 'Rede-Corporativa') => {
+    localStorage.setItem(localStorageKeys.providerSignIn, provider);
+
+    Auth.federatedSignIn({ provider: provider as any });
+  }, [])
+
   return (
     <Form onSubmit={handleLogIn}>
       <h3>Faça seu Login</h3>
@@ -57,7 +63,6 @@ const SignInForm: React.FC<SignInFormProps> = ({ email, setEmail }) => {
         Esqueci minha senha
       </ForgotPasswordBtn>
 
-
       <FormButton type="submit" disabled={loading} $loading={loading}>
         {loading && <div />}
         Login
@@ -70,19 +75,19 @@ const SignInForm: React.FC<SignInFormProps> = ({ email, setEmail }) => {
         <div />
       </RegisterBtn>
 
-      <FacebookBtn type="button" onClick={() => Auth.federatedSignIn({ provider: 'Facebook' as any })}>
+      <FacebookBtn type="button" onClick={() => handleProviderLogin('Facebook')}>
         <FacebookIcon />
         Facebook Login
         <div />
       </FacebookBtn>
 
-      <GoogleBtn type="button" onClick={() => Auth.federatedSignIn({ provider: 'Google' as any })}>
+      <GoogleBtn type="button" onClick={() => handleProviderLogin('Google')}>
         <FaGoogle />
         Google Login
         <div />
       </GoogleBtn>
 
-      <PrivateBtn type="button" onClick={() => Auth.federatedSignIn({ provider: 'Rede-Corporativa' as any })}>
+      <PrivateBtn type="button" onClick={() => handleProviderLogin('Rede-Corporativa')}>
         <FaLock />
         Private Network
         <div />
