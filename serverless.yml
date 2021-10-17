@@ -1,8 +1,0 @@
-component: website # A Component in the Registry
-name: my-website # The name of your Component Instance
-
-inputs: # The configuration the Component accepts
-  src:
-    src: ./
-    hook: yarn build
-    dist: ./build
