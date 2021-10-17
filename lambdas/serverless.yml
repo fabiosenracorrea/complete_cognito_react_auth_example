@@ -1,0 +1,76 @@
+service: cognito-triggers
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  lambdaHashingVersion: 20201221
+  region: us-east-1
+  stage: ${opt:stage, "dev"}
+  environment:
+    userPoolId: ${self:custom.cognitoPoolId.${self:provider.stage}}
+    userPoolName: ${self:custom.cognitoPoolName.${self:provider.stage}}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - cognito-idp:*
+      Resource:
+        - "arn:aws:cognito-idp:${self:provider.region}:*:userpool/${self:provider.environment.userPoolId}"
+        - "arn:aws:cognito-idp:${self:provider.region}:*:userpool/${self:provider.environment.userPoolId}/*"
+
+custom:
+  cognitoPoolId:
+    dev: POOL_ID # CHANGE
+    stag: POOL_ID # CHANGE
+    prod: POOL_ID # CHANGE
+  cognitoPoolName:
+    dev: POOL_NAME # CHANGE
+    stag: POOL_NAME # CHANGE
+    prod: POOL_NAME # CHANGE
+
+functions:
+  cognito-pre-signUp:
+    handler: handler.preSignUp
+    events:
+      - cognitoUserPool:
+          pool: ${self:provider.environment.userPoolName}
+          trigger: PreSignUp
+          existing: true
+  cognito-pre-signIn:
+    handler: handler.preSignIn
+    events:
+      - cognitoUserPool:
+          pool: ${self:provider.environment.userPoolName}
+          trigger: PreAuthentication
+          existing: true
+  cognito-post-signIn:
+    handler: handler.postSignIn
+    events:
+      - cognitoUserPool:
+          pool: ${self:provider.environment.userPoolName}
+          trigger: PostAuthentication
+          existing: true
+  cognito-pre-token:
+    handler: handler.preToken
+    events:
+      - cognitoUserPool:
+          pool: ${self:provider.environment.userPoolName}
+          trigger: PreTokenGeneration
+          existing: true
+  cognito-post-confirmation:
+    handler: handler.postConfirmation
+    events:
+      - cognitoUserPool:
+          pool: ${self:provider.environment.userPoolName}
+          trigger: PostConfirmation
+          existing: true
+  cognito-custom-message:
+    handler: handler.customMessage
+    events:
+      - cognitoUserPool:
+          pool: ${self:provider.environment.userPoolName}
+          trigger: CustomMessage
+          existing: true
+
+
+
+

@@ -1,0 +1,26 @@
+{
+  "version": "1",
+  "region": "us-east-1",
+  "userPoolId": "us-east-1_xxxx",
+  "userName": "google_114292320973880771843",
+  "callerContext": {
+    "awsSdkVersion": "aws-sdk-unknown-unknown",
+    "clientId": "xxxxxxxxx"
+  },
+  "triggerSource": "PreSignUp_ExternalProvider",
+  "request": {
+    "userAttributes": {
+      "email_verified": false,
+      "cognito:email_alias": "",
+      "name": "Fábio Corrêa",
+      "cognito:phone_number_alias": "",
+      "email": "xxx@xxxx.com"
+    },
+    "validationData": {}
+  },
+  "response": {
+    "autoConfirmUser": false,
+    "autoVerifyEmail": true,
+    "autoVerifyPhone": false
+  }
+}
